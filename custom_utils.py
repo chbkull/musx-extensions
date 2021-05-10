@@ -85,6 +85,22 @@ def bjorklund(events, positions):
 # Control Change Generators #
 # ------------------------- #
 
+def cc_message(queue, *, chan, ctrl, value):
+    """Wrapper for sending a single control change message that can be used by a scheduler.
+    
+    Arguments:
+        queue: musx Scheduler object, scheduler to add events to
+        chan: int (0-indexed), MIDI channel to send control change message to
+        ctrl: int (0-indexed), control change number
+        value: int, control change value
+
+    Yields:
+        nothing, yields zero to satisfy requirements for musx Scheduler.
+    """
+    queue.out.addevent(musx.MidiEvent.control_change(chan, ctrl, value, time=queue.now))
+    yield 0
+
+
 def cc_linear(queue, *, chan, ctrl, length, start, end, low=0, high=1, grain=0.05):
     """Changes a control change value linearly over time.
     Remaps the start/end from low/high to 0-127, then evenly spaces out the changes according to a grain resolution.
@@ -92,7 +108,7 @@ def cc_linear(queue, *, chan, ctrl, length, start, end, low=0, high=1, grain=0.0
     Arguments:
         queue: musx Scheduler object, scheduler to add events to
         chan: int (0-indexed), MIDI channel to send control change messages to
-        ctrl: int (0-indexed), control change value
+        ctrl: int (0-indexed), control change number
         length: number, total number of seconds for shift to take
         start: number, starting value
         end: number, ending value
@@ -120,7 +136,7 @@ def cc_distribution(queue, *, chan, ctrl, length, rate, distribution=musx.uniran
     Arguments:
         queue: musx Scheduler object, scheduler to add events to
         chan: int (0-indexed), MIDI channel to send control change messages to
-        ctrl: int (0-indexed), control change value
+        ctrl: int (0-indexed), control change number
         length: number, total number of seconds active
         rate: number, how frequently the control change value should be generated in seconds
         distribution: function, function whose returned number dictates the next control change value
