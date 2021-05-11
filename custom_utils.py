@@ -247,3 +247,25 @@ def random_ascend(queue, *, chan, length, notes, dur):
                 m = musx.MidiNote(time=queue.now + time, dur=dur, key=notes[n], chan=chan)
                 queue.out.addevent(m)
         yield dur
+
+def drunk_walker(queue, *, chan, length, notes, dur):
+    """Wrapper on musx's drunk generator to enable a track to drunkenly wander.
+    If the generator falls out of bounds the index is reflected back into range.
+
+    Arguments:
+        queue: musx Scheduler object, scheduler to add events to
+        chan: int (0-indexed), MIDI channel to send note messages to
+        length: number, total number of seconds to generate messages for
+        notes: list of ints, list of MIDI note numbers to pick from
+        dur: number, duration of each note in seconds, chance to be subdivided further
+        
+    Yields:
+        number, timestep until next note message should be sent
+    """
+    drunk = musx.drunk(int(len(notes) / 2), 2)
+    durations = musx.choose([dur, dur/2, dur/4])
+    while queue.elapsed < length:
+        picked_dur = next(durations)
+        index = musx.fit(next(drunk), 0, len(notes) - 1, mode='reflect')
+        queue.out.addevent(musx.MidiNote(time=queue.now, dur=picked_dur, key=notes[index], chan=chan))
+        yield picked_dur
