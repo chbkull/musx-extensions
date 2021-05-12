@@ -248,7 +248,7 @@ def random_ascend(queue, *, chan, length, notes, dur):
                 queue.out.addevent(m)
         yield dur
 
-def drunk_walker(queue, *, chan, length, notes, dur):
+def drunk_walker(queue, *, chan, length, notes, dur, drunk_stride=2):
     """Wrapper on musx's drunk generator to enable a track to drunkenly wander.
     If the generator falls out of bounds the index is reflected back into range.
 
