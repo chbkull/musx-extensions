@@ -366,8 +366,8 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
             row += next(row_deviation)
             col += next(col_deviation)
 
-        row = musx.fit(row, 0, items.shape[0], mode=mode)
-        col = musx.fit(col, 0, items.shape[1], mode=mode)
+        row = musx.fit(row, 0, items.shape[0] - 1, mode=mode)
+        col = musx.fit(col, 0, items.shape[1] - 1, mode=mode)
 
         points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
@@ -394,8 +394,8 @@ def random_2d(items, stop=None):
 
     for _ in range(stop):
 
-        row = round(musx.uniran() * items.shape[0])
-        col = round(musx.uniran() * items.shape[1])
+        row = round(musx.uniran() * (items.shape[0] - 1))
+        col = round(musx.uniran() * (items.shape[1] - 1))
 
         points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
@@ -431,8 +431,8 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
         row_raw = musx.fit(row_distribution(), row_dist_low, row_dist_high)
         col_raw = musx.fit(col_distribution(), col_dist_low, col_dist_high)
 
-        row = round(musx.rescale(row_raw, row_dist_low, row_dist_high, 0, items.shape[0]))
-        col = round(musx.rescale(col_raw, col_dist_low, col_dist_high, 0, items.shape[1]))
+        row = round(musx.rescale(row_raw, row_dist_low, row_dist_high, 0, items.shape[0] - 1))
+        col = round(musx.rescale(col_raw, col_dist_low, col_dist_high, 0, items.shape[1] - 1))
 
         points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
