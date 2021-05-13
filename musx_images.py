@@ -152,6 +152,9 @@ def display_image(img, *, grayscale=False):
     Arguments:
         img: 3D number Numpy array, image to display, assumes RGB format
         grayscale: boolean, flag for if image is grayscale or not, defaults to False
+    
+    Raises:
+        TODO: error handling (does this work grayscale?)
     """
     fig, axes = plt.subplots(1, 1, figsize=(10, 10))
 
@@ -171,6 +174,9 @@ def points_image(img, points, *, enlarge=25):
     
     Returns:
         3D number Numpy array, original image only where points are listed
+    
+    Raises:
+        TODO: error handling (does this work grayscale?)
     """
     p_image = np.empty_like(img)
     p_image.fill(255)
@@ -187,6 +193,9 @@ def display_images(imgs, *, grayscale=None):
     Arguments:
         img: 3D number Numpy array, image to display, assumes RGB format
         grayscale: boolean list, flag for if image is grayscale or not, defaults to None
+    
+    Raises:
+        TODO: error handling
     """
     fig, axes = plt.subplots(1, len(imgs), figsize=(10 * len(imgs), 10))
 
