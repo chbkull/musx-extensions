@@ -26,6 +26,8 @@ def function_template():
 
 valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab", "Luv", "RGB", "XYZ", "YCbCr", "YUV"]
 
+valid_interpolations = ["INTER_NEAREST", "INTER_LINEAR", "INTER_CUBIC", "INTER_AREA", "INTER_LINEAR_EXACT", "INTER_NEAREST_EXACT", "INTER_MAX"]
+
 
 
 # ---------------------------- #
@@ -471,3 +473,13 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
 
 def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
     raise NotImplementedError
+
+"""
+Remaining ideas
+- Convolutions
+- Morphs
+- Edge dectection
+- Pooling
+- Walk
+- PCA
+"""
