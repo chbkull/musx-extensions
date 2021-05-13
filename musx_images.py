@@ -219,7 +219,7 @@ def linear_interp_2d():
 # 2D Generators #
 # ------------- #
 
-def traversal_2d(items, stop=None, *, start_x=0, start_y=0, movement=[(1, 0), (0, 1)]):
+def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1), (1, 0)]):
     """Traverses a two dimensional list / numpy array according to movement rules.
     If the first movement rule walks off the array, the second movement rule is used
     and the indices wrap using the % operator.
@@ -227,12 +227,12 @@ def traversal_2d(items, stop=None, *, start_x=0, start_y=0, movement=[(1, 0), (0
     Arguments:
         items: 2D list / 2D numpy array, items to walk through
         stop: int, number of items to yield, defaults to infinite*
-        start_x: int, starting location in the first dimension, defaults to 0
-        start_y: int, starting location in the second dimension, defaults to 0
+        start_row: int, starting location in the first dimension, defaults to 0
+        start_col: int, starting location in the second dimension, defaults to 0
         movement: list of two pairs, specifies dimensional movement, defaults to row-major
     
     Yields:
-        Information at the given location
+        Information at the given location, coordinates
     
     Raises:
         TODO: error handling for bad dimension sizes, negative stop size
@@ -243,38 +243,134 @@ def traversal_2d(items, stop=None, *, start_x=0, start_y=0, movement=[(1, 0), (0
     if stop == None:
         stop = sys.maxsize
 
-    x_pos = start_x
-    y_pos = start_y
+    row = start_row
+    col = start_col
 
-    yield list(np_items[x_pos, y_pos]) # Yield original item
+    yield list(np_items[row, col]), (row, col) # Yield original item
 
     for _ in range(stop - 1):
-        x_pos += movement[0][0]
-        y_pos += movement[0][1]
+        row += movement[0][0]
+        col += movement[0][1]
 
         # Use second movement rule if off bounds
-        if x_pos >= np_items.shape[0] or x_pos < 0 or y_pos >= np_items.shape[1] or y_pos < 0:
-            x_pos += movement[1][0]
-            y_pos += movement[1][1]
+        if row >= np_items.shape[0] or row < 0 or col >= np_items.shape[1] or col < 0:
+            row += movement[1][0]
+            col += movement[1][1]
         
-        x_pos %= np_items.shape[0]
-        y_pos %= np_items.shape[1]
+        row %= np_items.shape[0]
+        col %= np_items.shape[1]
 
-        yield list(np_items[x_pos, y_pos])
+        yield list(np_items[row, col]), (row, col)
 
 
-def drunk_2d(items, stop=None, *, start_x=0, start_y=0, width=(1, 1), movement_2d=True, mode="wrap"):
-    # Use fit with wrap/reflect modes
-    raise NotImplementedError
+def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), movement_2d=True, mode="wrap"):
+    """Drunkenly walks along a two dimensional list / numpy array.
+    Based off of musx.generators.drunk.
+
+    Arguments:
+        items: 2D list / 2D numpy array, items to walk through
+        stop: int, number of items to yield, defaults to infinite*
+        start_row: int, starting location in the first dimension, defaults to 0
+        start_col: int, starting location in the second dimension, defaults to 0
+        width: pair of ints, specifies range of dimensional movement, defaults to one in both dimensions
+        movement_2d: boolean, whether movement in both dimensions at same time is possible, defaults to True
+        mode: string, how to handle out of bounds (see musx.tools.fit), defaults to wrapping around
+    
+    Yields:
+        Information at the given location, coordinates
+    
+    Raises:
+        TODO: error handling
+    """
+    np_items = np.array(items)
+
+    if stop == None:
+        stop = sys.maxsize
+
+    row = start_row
+    col = start_col
+
+    yield list(np_items[row, col]), (row, col) # Yield original item
+
+    row_deviation = musx.choose([x for x in range(-1 * width[0], width[0] + 1)])
+    col_deviation = musx.choose([x for x in range(-1 * width[1], width[1] + 1)])
+
+    for _ in range(stop - 1):
+        if movement_2d == False:
+            if musx.odds(0.5):
+                row += next(row_deviation)
+            else:
+                col += next(col_deviation)
+        else:
+            row += next(row_deviation)
+            col += next(col_deviation)
+
+        row = musx.fit(row, 0, items.shape[0], mode=mode)
+        col = musx.fit(col, 0, items.shape[1], mode=mode)
+
+        yield list(np_items[row, col]), (row, col)
 
 
 def random_2d(items, stop=None):
-    raise NotImplementedError
+    """Randomly picks elements of a two dimensional list / numpy array.
+
+    Arguments:
+        items: 2D list / 2D numpy array, items to walk through
+        stop: int, number of items to yield, defaults to infinite*
+    
+    Yields:
+        Information at the given location, coordinates
+    
+    Raises:
+        TODO: error handling
+    """
+    np_items = np.array(items)
+
+    if stop == None:
+        stop = sys.maxsize
+
+    for _ in range(stop):
+
+        row = round(musx.uniran() * items.shape[0])
+        col = round(musx.uniran() * items.shape[1])
+
+        yield list(np_items[row, col]), (row, col)
 
 
-def distribution_2d(items, stop=None, *, x_distribution=musx.uniran, x_dist_low=0, x_dist_high=1, y_distribution=musx.uniran, y_dist_low=0, y_dist_high=1):
-    raise NotImplementedError
+def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_low=-4, row_dist_high=4, col_distribution=musx.gauss, col_dist_low=-4, col_dist_high=4):
+    """Picks elements of a two dimensional list / numpy array according to a specified distribution.
+
+    Arguments:
+        items: 2D list / 2D numpy array, items to walk through
+        stop: int, number of items to yield, defaults to infinite*
+        row_distribution: function returning a number, distribution for row axis
+        row_dist_low: number, lower bound on row_distribution function
+        row_dist_high: number, upper bound on row_distribution function
+        col_distribution: function returning a number, distribution for column axis
+        col_dist_low: number, lower bound on col_distribution function
+        col_dist_high: number, upper bound on col_distribution function
+    
+    Yields:
+        Information at the given location, coordinates
+    
+    Raises:
+        TODO: error handling
+    """
+    np_items = np.array(items)
+
+    if stop == None:
+        stop = sys.maxsize
+
+    for _ in range(stop):
+
+        row_raw = musx.fit(row_distribution(), row_dist_low, row_dist_high)
+        col_raw = musx.fit(col_distribution(), col_dist_low, col_dist_high)
+
+        row = round(musx.rescale(row_raw, row_dist_low, row_dist_high, 0, items.shape[0]))
+        col = round(musx.rescale(col_raw, col_dist_low, col_dist_high, 0, items.shape[1]))
+
+        yield list(np_items[row, col]), (row, col)
 
 
-def path_2d(items, *, start_x, start_y, end_x, end_y, max_len=None):
+def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
     raise NotImplementedError
