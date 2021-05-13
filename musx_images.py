@@ -28,6 +28,7 @@ valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab"
 
 valid_interpolations = ["INTER_NEAREST", "INTER_LINEAR", "INTER_CUBIC", "INTER_AREA", "INTER_LINEAR_EXACT", "INTER_NEAREST_EXACT", "INTER_MAX"]
 
+points_cache = []
 
 
 # ---------------------------- #
@@ -252,7 +253,7 @@ def enlarge_image(img, enlarge_factor, *, interpolation_mode=cv.INTER_LINEAR):
     return cv.resize(img, (new_width, new_height), interpolation=interpolation_mode)
 
 
-def blur_image(img, factor, *, shrink_interp_mode=cv.INTER_AREA, enlarge_interp_mode=cv.INTER_LINEAR):
+def blur_image(img, intensity, *, shrink_interp_mode=cv.INTER_AREA, enlarge_interp_mode=cv.INTER_LINEAR):
     """Blurs an image by shrinking it and the enlarging it back to normal size.
 
     Arguments:
@@ -266,8 +267,8 @@ def blur_image(img, factor, *, shrink_interp_mode=cv.INTER_AREA, enlarge_interp_
     Raises:
         TODO: error handling
     """
-    shrunk = shrink_image(img, (1 / factor), interpolation_mode=shrink_interp_mode)
-    return enlarge_image(shrunk, factor, interpolation_mode=enlarge_interp_mode)
+    shrunk = shrink_image(img, (1 / intensity), interpolation_mode=shrink_interp_mode)
+    return enlarge_image(shrunk, intensity, interpolation_mode=enlarge_interp_mode)
 
 
 
@@ -293,7 +294,8 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
     Raises:
         TODO: error handling for bad dimension sizes, negative stop size
     """
-
+    global points_cache
+    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -302,6 +304,7 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
     row = start_row
     col = start_col
 
+    points_cache.append((row, col))
     yield list(np_items[row, col]), (row, col) # Yield original item
 
     for _ in range(stop - 1):
@@ -316,6 +319,7 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
         row %= np_items.shape[0]
         col %= np_items.shape[1]
 
+        points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
 
 
@@ -338,6 +342,8 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
     Raises:
         TODO: error handling
     """
+    global points_cache
+    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -346,6 +352,7 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
     row = start_row
     col = start_col
 
+    points_cache.append((row, col))
     yield list(np_items[row, col]), (row, col) # Yield original item
 
     row_deviation = musx.choose([x for x in range(-1 * width[0], width[0] + 1)])
@@ -364,6 +371,7 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
         row = musx.fit(row, 0, items.shape[0], mode=mode)
         col = musx.fit(col, 0, items.shape[1], mode=mode)
 
+        points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
 
 
@@ -380,6 +388,8 @@ def random_2d(items, stop=None):
     Raises:
         TODO: error handling
     """
+    global points_cache
+    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -390,6 +400,7 @@ def random_2d(items, stop=None):
         row = round(musx.uniran() * items.shape[0])
         col = round(musx.uniran() * items.shape[1])
 
+        points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
 
 
@@ -412,6 +423,8 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
     Raises:
         TODO: error handling
     """
+    global points_cache
+    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -425,6 +438,7 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
         row = round(musx.rescale(row_raw, row_dist_low, row_dist_high, 0, items.shape[0]))
         col = round(musx.rescale(col_raw, col_dist_low, col_dist_high, 0, items.shape[1]))
 
+        points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
 
 
@@ -446,6 +460,8 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
     Raises:
         TODO: error handling
     """
+    global points_cache
+    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -454,6 +470,7 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
     exact_row = start_row
     exact_col = start_col
 
+    points_cache.append((exact_row, exact_col))
     yield list(np_items[exact_row, exact_col]), (exact_row, exact_col) # Yield original item
 
     row_step = (end_row - start_row) / num_steps
@@ -466,12 +483,15 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
         row = round(exact_row)
         col = round(exact_col)
 
+        points_cache.append((row, col))
         yield list(np_items[row, col]), (row, col)
 
         if row == end_row and col == end_col:
             break
 
 def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
+    global points_cache
+    points_cache = []
     raise NotImplementedError
 
 """
