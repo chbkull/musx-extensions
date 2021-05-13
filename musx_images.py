@@ -5,20 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import sys
 
-def function_template():
-    """<description>
 
-    Arguments:
-        <arg>: <desc>
-    
-    Returns/Yields:
-        <desc>
-    
-    Raises:
-        <exception>: <desc>
-    """
-
-    return None
 
 # ------------------------ #
 # Library Global Variables #
@@ -29,6 +16,7 @@ valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab"
 valid_interpolations = ["INTER_NEAREST", "INTER_LINEAR", "INTER_CUBIC", "INTER_AREA", "INTER_LINEAR_EXACT", "INTER_NEAREST_EXACT", "INTER_MAX"]
 
 points_cache = []
+
 
 
 # ---------------------------- #
@@ -490,7 +478,3 @@ def clear_points_cache():
     """
     global points_cache
     points_cache = []
-
-def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
-    global points_cache
-    raise NotImplementedError
