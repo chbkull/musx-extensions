@@ -295,7 +295,6 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
         TODO: error handling for bad dimension sizes, negative stop size
     """
     global points_cache
-    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -343,7 +342,6 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
         TODO: error handling
     """
     global points_cache
-    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -389,7 +387,6 @@ def random_2d(items, stop=None):
         TODO: error handling
     """
     global points_cache
-    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -424,7 +421,6 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
         TODO: error handling
     """
     global points_cache
-    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -461,7 +457,6 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
         TODO: error handling
     """
     global points_cache
-    points_cache = []
     np_items = np.array(items)
 
     if stop == None:
@@ -489,17 +484,13 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
         if row == end_row and col == end_col:
             break
 
-def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
+
+def clear_points_cache():
+    """Clears the global points cache variable.
+    """
     global points_cache
     points_cache = []
-    raise NotImplementedError
 
-"""
-Remaining ideas
-- Convolutions
-- Morphs
-- Edge dectection
-- Pooling
-- Walk
-- PCA
-"""
+def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
+    global points_cache
+    raise NotImplementedError
