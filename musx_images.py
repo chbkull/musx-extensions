@@ -28,9 +28,9 @@ valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab"
 
 
 
-# ------------------------ #
-# Image Specific Functions #
-# ------------------------ #
+# ---------------------------- #
+# Image Manipulation Functions #
+# ---------------------------- #
 
 def load_image(image_path, *, color_space="RGB"):
     """Loads an image from a path into a matrix of data.
@@ -161,57 +161,102 @@ def display_image(img, *, grayscale=False):
         axes.imshow(img)
 
 
+def points_image(img, points, *, enlarge=25):
+    """Plots points on the original image.
 
-def display_points(img, points, *, grayscale=False):
-    """Plots points alongside the original image.
+    Arguments:
+        img: 3D number Numpy array, image to display
+        points: list of number pairs, points to plot
+        enlarge: int, enlarges each point to make it spottable on a plot, defaults to 25
+    
+    Returns:
+        3D number Numpy array, original image only where points are listed
+    """
+    p_image = np.empty_like(img)
+    p_image.fill(255)
+
+    for (x, y) in points:
+        p_image[max(0, x - enlarge):min(img.shape[0] - 1, x + enlarge),max(0, y - enlarge):min(img.shape[1] - 1, y + enlarge)] = img[max(0, x - enlarge):min(img.shape[0] - 1, x + enlarge),max(0, y - enlarge):min(img.shape[1] - 1, y + enlarge)]
+
+    return p_image
+
+
+def display_images(imgs, *, grayscale=None):
+    """Wrapper on matplotlib's imshow function.
 
     Arguments:
         img: 3D number Numpy array, image to display, assumes RGB format
-        points: list of number pairs, points to plot
-        grayscale: boolean, flag for if image is grayscale or not, defaults to False
+        grayscale: boolean list, flag for if image is grayscale or not, defaults to None
     """
-    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+    fig, axes = plt.subplots(1, len(imgs), figsize=(10 * len(imgs), 10))
+
+    for index in range(len(imgs)):
+        cur_plt = axes[index]
+        
+        if grayscale != None and grayscale[index]:
+            cur_plt.imshow(imgs[index], cmap='gray')
+        else:
+            cur_plt.imshow(imgs[index])
+
+
+def shrink_image(img, shrink_factor, *, interpolation_mode=cv.INTER_AREA):
+    """Shrinks an image by a given factor.
+    Documentation recommends use of cv.INTER_AREA interpolation.
+
+    Arguments:
+        img: 3D number Numpy array, image to shrink, assumes BGR format
+        shrink_factor: float, factor by which to shrink both dimensions of the image
+        interpolation_mode: int, mode by which to interpolate, defaults to cv.INTER_AREA
     
-    plt1 = axes[0]
-    if grayscale:
-        plt1.imshow(img, cmap='gray')
-    else:
-        plt1.imshow(img)
+    Returns:
+        3D number Numpy array, the shrunken image
     
-    plt2 = axes[1]
-    points_image = np.empty_like(img)
-    points_image.fill(255)
-
-    for (x, y) in points:
-        points_image[max(0, x - 25):min(img.shape[0] - 1, x + 25),max(0, y - 25):min(img.shape[1] - 1, y + 25)] = img[max(0, x - 25):min(img.shape[0] - 1, x + 25),max(0, y - 25):min(img.shape[1] - 1, y + 25)]
-
-    plt2.imshow(points_image)
-
+    Raises:
+        TODO: error handling
+    """
+    new_height = round(img.shape[0] * shrink_factor)
+    new_width = round(img.shape[1] * shrink_factor)
+    
+    return cv.resize(img, (new_width, new_height), interpolation=interpolation_mode)
 
 
+def enlarge_image(img, enlarge_factor, *, interpolation_mode=cv.INTER_LINEAR):
+    """Enlarges an image by a given factor.
+    Documentation recommends use of cv.INTER_LINEAR or cv.INTER_CUBIC interpolation.
 
-# ------------------ #
-# Resizing Functions #
-# ------------------ #
-
-def avg_pool_2d():
-    raise NotImplementedError
-
-
-def min_pool_2d():
-    raise NotImplementedError
-
-
-def max_pool_2d():
-    raise NotImplementedError
-
-
-def kerneling():
-    raise NotImplementedError
+    Arguments:
+        img: 3D number Numpy array, image to shrink, assumes BGR format
+        enlarge_factor: numeric, factor by which to enlarge both dimensions of the image
+        interpolation_mode: int, mode by which to interpolate, defaults to cv.INTER_LINEAR
+    
+    Returns:
+        3D number Numpy array, the enlarged image
+    
+    Raises:
+        TODO: error handling
+    """
+    new_height = round(img.shape[0] * enlarge_factor)
+    new_width = round(img.shape[1] * enlarge_factor)
+    
+    return cv.resize(img, (new_width, new_height), interpolation=interpolation_mode)
 
 
-def linear_interp_2d():
-    raise NotImplementedError
+def blur_image(img, factor, *, shrink_interp_mode=cv.INTER_AREA, enlarge_interp_mode=cv.INTER_LINEAR):
+    """Blurs an image by shrinking it and the enlarging it back to normal size.
+
+    Arguments:
+        img: 3D number Numpy array, image to shrink, assumes BGR format
+        enlarge_factor: numeric, factor by which to enlarge both dimensions of the image
+        interpolation_mode: int, mode by which to interpolate, defaults to cv.INTER_LINEAR
+    
+    Returns:
+        3D number Numpy array, the blurred image
+    
+    Raises:
+        TODO: error handling
+    """
+    shrunk = shrink_image(img, (1 / factor), interpolation_mode=shrink_interp_mode)
+    return enlarge_image(shrunk, factor, interpolation_mode=enlarge_interp_mode)
 
 
 
@@ -372,7 +417,24 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
         yield list(np_items[row, col]), (row, col)
 
 
-def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, step_size=1):
+def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_steps=10):
+    """Draws a straight line from the starting point to the ending point and picks elements along the line.
+
+    Arguments:
+        items: 2D list / 2D numpy array, items to walk through
+        stop: int, number of items to yield, defaults to infinite*
+        start_row: int, starting row
+        start_col: int, starting column
+        end_row: int, ending row
+        end_col: int, ending column
+        num_steps: int, number of steps to take along line, defaults to 10
+    
+    Yields:
+        Information at the given location, coordinates
+    
+    Raises:
+        TODO: error handling
+    """
     np_items = np.array(items)
 
     if stop == None:
@@ -383,13 +445,10 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, step_si
 
     yield list(np_items[exact_row, exact_col]), (exact_row, exact_col) # Yield original item
 
-    # TODO: fix this
-    row_step = (end_row - start_row) / step_size
-    col_step = (end_col - start_col) / step_size
+    row_step = (end_row - start_row) / num_steps
+    col_step = (end_col - start_col) / num_steps
 
     for i in range(stop - 1):
-        if i < 10:
-            print("hi")
         exact_row += row_step
         exact_col += col_step
 
