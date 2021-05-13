@@ -183,7 +183,7 @@ def display_points(img, points, *, grayscale=False):
     points_image.fill(255)
 
     for (x, y) in points:
-        points_image[max(0, x - 25):min(img.shape[0] - 1, x + 25),max(0, y - 25):min(img.shape[1] - 1, y + 25), 0] = 0
+        points_image[max(0, x - 25):min(img.shape[0] - 1, x + 25),max(0, y - 25):min(img.shape[1] - 1, y + 25)] = img[max(0, x - 25):min(img.shape[0] - 1, x + 25),max(0, y - 25):min(img.shape[1] - 1, y + 25)]
 
     plt2.imshow(points_image)
 
@@ -371,6 +371,35 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
 
         yield list(np_items[row, col]), (row, col)
 
+
+def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, step_size=1):
+    np_items = np.array(items)
+
+    if stop == None:
+        stop = sys.maxsize
+
+    exact_row = start_row
+    exact_col = start_col
+
+    yield list(np_items[exact_row, exact_col]), (exact_row, exact_col) # Yield original item
+
+    # TODO: fix this
+    row_step = (end_row - start_row) / step_size
+    col_step = (end_col - start_col) / step_size
+
+    for i in range(stop - 1):
+        if i < 10:
+            print("hi")
+        exact_row += row_step
+        exact_col += col_step
+
+        row = round(exact_row)
+        col = round(exact_col)
+
+        yield list(np_items[row, col]), (row, col)
+
+        if row == end_row and col == end_col:
+            break
 
 def path_2d(items, *, start_row, start_col, end_x, end_y, max_len=None):
     raise NotImplementedError
