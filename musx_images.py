@@ -147,7 +147,46 @@ def randomize_color_space(img, iterations=1, *, final_color_space=None):
 
 
 def display_image(img, *, grayscale=False):
-    raise NotImplementedError
+    """Wrapper on matplotlib's imshow function.
+
+    Arguments:
+        img: 3D number Numpy array, image to display, assumes RGB format
+        grayscale: boolean, flag for if image is grayscale or not, defaults to False
+    """
+    fig, axes = plt.subplots(1, 1, figsize=(10, 10))
+
+    if grayscale:
+        axes.imshow(img, cmap='gray')
+    else:
+        axes.imshow(img)
+
+
+
+def display_points(img, points, *, grayscale=False):
+    """Plots points alongside the original image.
+
+    Arguments:
+        img: 3D number Numpy array, image to display, assumes RGB format
+        points: list of number pairs, points to plot
+        grayscale: boolean, flag for if image is grayscale or not, defaults to False
+    """
+    fig, axes = plt.subplots(1, 2, figsize=(20, 10))
+    
+    plt1 = axes[0]
+    if grayscale:
+        plt1.imshow(img, cmap='gray')
+    else:
+        plt1.imshow(img)
+    
+    plt2 = axes[1]
+    points_image = np.empty_like(img)
+    points_image.fill(255)
+
+    for (x, y) in points:
+        points_image[max(0, x - 25):min(img.shape[0] - 1, x + 25),max(0, y - 25):min(img.shape[1] - 1, y + 25), 0] = 0
+
+    plt2.imshow(points_image)
+
 
 
 
