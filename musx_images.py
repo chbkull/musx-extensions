@@ -3,6 +3,7 @@ import musx_images
 import cv2 as cv
 import numpy as np
 from matplotlib import pyplot as plt
+import sys
 
 def function_template():
     """<description>
@@ -19,6 +20,10 @@ def function_template():
 
     return None
 
+valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab", "Luv", "RGB", "XYZ", "YCbCr", "YUV"]
+
+
+
 # ---------------- #
 # Helper Functions #
 # ---------------- #
@@ -30,24 +35,38 @@ def load_image(image_path, *, color_space="RGB"):
         image_path: string, filepath to the desired image to be loaded
         color_space: string, color space data to receive, defaults to RGB
     
-    Returns/Yields:
+    Returns:
         3D number Numpy array, whose dimensions represent x-coord, y-coord, channel
+    
+    Raises:
+        ValueError: specified color space is not supported
     """
+    if color_space not in valid_color_spaces:
+        raise ValueError ("Specified color space '{}' is not in supported list of color spaces: {}".format(color_space, ', '.join(valid_color_spaces)))
+
     img_BGR = cv.imread(image_path)
 
     return convert_image(img_BGR, color_space=color_space)
 
 
 def convert_image(img, *, color_space="RGB"):
-    """Converts an image from the BGR color space to the specified color space
+    """Converts an image from the BGR color space to the specified color space.
+    If the base image is not in the BGR color space, then this can lead to some weird behavior.
 
     Arguments:
-        img: 3D number Numpy array, data representation of image
+        img: 3D number Numpy array, data representation of image to convert
         color_space: string, color space to convert from BGR (OpenCV's loading standard), defaults to RGB
     
-    Returns/Yields:
+    Returns:
         3D number Numpy array, representing the image in the correct colorspace
+    
+    Raises:
+        ValueError: specified color space is not supported
     """
+
+    if color_space not in valid_color_spaces:
+        raise ValueError ("Specified color space '{}' is not in supported list of color spaces: {}".format(color_space, ', '.join(valid_color_spaces)))
+
     if color_space == "BGR": # Blue, green, red, see RGB below
         converted_img = img
     elif color_space == "Gray": # Grayscale, special treatment for matplotlib plotting
@@ -81,21 +100,92 @@ def convert_image(img, *, color_space="RGB"):
     
     return converted_img
 
+
+def randomize_color_space(img, iterations=1, *, final_color_space=None):
+    """Converts an image into a random three channel color space.
+
+    Arguments:
+        img: 3D number Numpy array, data representation of image to randomize color space
+        iterations: int, number of random color space transforms, defaults to 1
+        final_color_space: string, if specified, reduces number of random iterations by 1 and finishes with the specified color space
+    
+    Returns:
+        3D number Numpy array, representing an image in a mangled color space
+    
+    Raises:
+        ValueError: nonsense iterations number or specified final color space is not supported
+    """
+    if iterations <= 0:
+        raise ValueError ("Number of iterations must be 1 or greater")
+
+    rand_color_space = musx.choose(musx_images.valid_color_spaces)
+
+    if final_color_space != None:
+        if final_color_space not in valid_color_spaces:
+            raise ValueError ("Specified final color space '{}' is not in supported list of color spaces: {}".format(color_space, ', '.join(valid_color_spaces)))
+        adjusted_iterations = iterations - 1
+    else:
+        adjusted_iterations = iterations
+    
+    converted_img = img.copy()
+    for i in range(adjusted_iterations):
+        color_space = next(rand_color_space)
+
+        while color_space == "Gray": # Prevent grayscale transformation as it is only 1 channel
+            color_space = next(rand_color_space)
+
+        converted_img = convert_image(converted_img, color_space=color_space)
+    
+    if final_color_space != None:
+        converted_img = convert_image(converted_img, color_space=final_color_space)
+    
+    return converted_img
+
+
+
 # --------------- #
 # Data Generators #
 # --------------- #
 
-def image_data(*, image_path, stop=None, color_space="RGB", start_x=0, start_y=0, movement="x:i y:i"):
-    """<description>
+def traversal_2d(items, *, stop=None, start_x=0, start_y=0, movement=[(1, 0), (0, 1)]):
+    """Traverses a two dimensional list / numpy array according to movement rules.
+    If the first movement rule walks off the array, the second movement rule is used
+    and the indices wrap using the % operator.
 
     Arguments:
-        <arg>: <desc>
+        items: 2D list / 2D numpy array, items to walk through
+        stop: int, number of items to yield, defaults to infinite*
+        start_x: int, starting location in the first dimension, defaults to 0
+        start_y: int, starting location in the second dimension, defaults to 0
+        movement: list of two pairs, specifies dimensional movement, defaults to row-major
     
-    Returns/Yields:
-        <desc>
+    Yields:
+        Information at the given location
     
     Raises:
-        <exception>: <desc>
+        TODO: error handling for bad dimension sizes, negative stop size
     """
 
-    return None
+    np_items = np.array(items)
+
+    if stop == None:
+        stop = sys.maxsize
+
+    x_pos = start_x
+    y_pos = start_y
+
+    yield list(np_items[x_pos, y_pos]) # Yield original item
+
+    for _ in range(stop - 1):
+        x_pos += movement[0][0]
+        y_pos += movement[0][1]
+
+        # Use second movement rule if off bounds
+        if x_pos >= np_items.shape[0] or x_pos < 0 or y_pos >= np_items.shape[1] or y_pos < 0:
+            x_pos += movement[1][0]
+            y_pos += movement[1][1]
+        
+        x_pos %= np_items.shape[0]
+        y_pos %= np_items.shape[1]
+
+        yield list(np_items[x_pos, y_pos])
