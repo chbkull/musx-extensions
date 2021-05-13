@@ -20,13 +20,17 @@ def function_template():
 
     return None
 
+# ------------------------ #
+# Library Global Variables #
+# ------------------------ #
+
 valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab", "Luv", "RGB", "XYZ", "YCbCr", "YUV"]
 
 
 
-# ---------------- #
-# Helper Functions #
-# ---------------- #
+# ------------------------ #
+# Image Specific Functions #
+# ------------------------ #
 
 def load_image(image_path, *, color_space="RGB"):
     """Loads an image from a path into a matrix of data.
@@ -142,12 +146,41 @@ def randomize_color_space(img, iterations=1, *, final_color_space=None):
     return converted_img
 
 
+def display_image(img, *, grayscale=False):
+    raise NotImplementedError
 
-# --------------- #
-# Data Generators #
-# --------------- #
 
-def traversal_2d(items, *, stop=None, start_x=0, start_y=0, movement=[(1, 0), (0, 1)]):
+
+# ------------------ #
+# Resizing Functions #
+# ------------------ #
+
+def avg_pool_2d():
+    raise NotImplementedError
+
+
+def min_pool_2d():
+    raise NotImplementedError
+
+
+def max_pool_2d():
+    raise NotImplementedError
+
+
+def kerneling():
+    raise NotImplementedError
+
+
+def linear_interp_2d():
+    raise NotImplementedError
+
+
+
+# ------------- #
+# 2D Generators #
+# ------------- #
+
+def traversal_2d(items, stop=None, *, start_x=0, start_y=0, movement=[(1, 0), (0, 1)]):
     """Traverses a two dimensional list / numpy array according to movement rules.
     If the first movement rule walks off the array, the second movement rule is used
     and the indices wrap using the % operator.
@@ -189,3 +222,20 @@ def traversal_2d(items, *, stop=None, start_x=0, start_y=0, movement=[(1, 0), (0
         y_pos %= np_items.shape[1]
 
         yield list(np_items[x_pos, y_pos])
+
+
+def drunk_2d(items, stop=None, *, start_x=0, start_y=0, width=(1, 1), movement_2d=True, mode="wrap"):
+    # Use fit with wrap/reflect modes
+    raise NotImplementedError
+
+
+def random_2d(items, stop=None):
+    raise NotImplementedError
+
+
+def distribution_2d(items, stop=None, *, x_distribution=musx.uniran, x_dist_low=0, x_dist_high=1, y_distribution=musx.uniran, y_dist_low=0, y_dist_high=1):
+    raise NotImplementedError
+
+
+def path_2d(items, *, start_x, start_y, end_x, end_y, max_len=None):
+    raise NotImplementedError
