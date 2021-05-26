@@ -34,7 +34,7 @@ def load_image(image_path, *, color_space="RGB"):
         color_space: string, color space data to receive, defaults to RGB
     
     Returns:
-        3D number Numpy array, whose dimensions represent x-coord, y-coord, channel
+        2D or 3D number Numpy array, whose dimensions represent x-coord, y-coord, channel (if it exists)
     
     Raises:
         ValueError: specified color space is not supported
@@ -56,7 +56,7 @@ def convert_image(img, *, color_space="RGB"):
         color_space: string, color space to convert from BGR (OpenCV's loading standard), defaults to RGB
     
     Returns:
-        3D number Numpy array, representing the image in the correct colorspace
+        2D or 3D number Numpy array, representing the image in the correct colorspace
     
     Raises:
         ValueError: specified color space is not supported
@@ -108,7 +108,7 @@ def randomize_color_space(img, iterations=1, *, final_color_space=None):
         final_color_space: string, if specified, reduces number of random iterations by 1 and finishes with the specified color space
     
     Returns:
-        3D number Numpy array, representing an image in a mangled color space
+        2D or 3D number Numpy array, representing an image in a mangled color space
     
     Raises:
         ValueError: nonsense iterations number or specified final color space is not supported
@@ -144,8 +144,7 @@ def display_image(img):
     """Wrapper on matplotlib's imshow function.
 
     Arguments:
-        img: 3D number Numpy array, image to display, assumes RGB format
-        grayscale: boolean, flag for if image is grayscale or not, defaults to False
+        img: 2D or 3D number Numpy array, image to display, assumes grayscale or RGB format
     
     Raises:
         ValueError: image has too few or too many dimensions
@@ -165,7 +164,7 @@ def points_image(img, points, *, enlarge=25):
     """Plots points on the original image.
 
     Arguments:
-        img: 3D number Numpy array, image to display
+        img: 2D / 3D number Numpy array, image to sketch points over
         points: list of number pairs, points to plot
         enlarge: int, enlarges each point to make it spottable on a plot, defaults to 25
     
@@ -173,8 +172,11 @@ def points_image(img, points, *, enlarge=25):
         3D number Numpy array, original image only where points are listed
     
     Raises:
-        TODO: error handling (does this work grayscale?)
+        ValueError: image has too few or too many dimensions
     """
+    if len(img.shape) != 2 and len(img.shape) != 3:
+        raise ValueError ("Image is not two or three dimensional")
+
     p_image = np.empty_like(img)
     p_image.fill(255)
 
@@ -184,22 +186,26 @@ def points_image(img, points, *, enlarge=25):
     return p_image
 
 
-def display_images(imgs, *, grayscale=None):
+def display_images(imgs):
     """Wrapper on matplotlib's imshow function.
 
     Arguments:
-        img: 3D number Numpy array, image to display, assumes RGB format
+        img: list of 2D or 3D number Numpy arrays, image to display, assumes grayscale or RGB format
         grayscale: boolean list, flag for if image is grayscale or not, defaults to None
     
     Raises:
-        TODO: error handling
+        ValueError: an image has too few or too many dimensions
     """
+    for index in range(len(imgs)):
+        if len(imgs[index].shape) != 2 and len(imgs[index].shape) != 3:
+        raise ValueError ("An image is not two or three dimensional")
+
     fig, axes = plt.subplots(1, len(imgs), figsize=(10 * len(imgs), 10))
 
     for index in range(len(imgs)):
         cur_plt = axes[index]
         
-        if grayscale != None and grayscale[index]:
+        if len(imgs[index].shape) == 2:
             cur_plt.imshow(imgs[index], cmap='gray')
         else:
             cur_plt.imshow(imgs[index])
@@ -218,8 +224,19 @@ def shrink_image(img, shrink_factor, *, interpolation_mode=cv.INTER_AREA):
         3D number Numpy array, the shrunken image
     
     Raises:
-        TODO: error handling
+        ValueError: unknown interpolation mode, incorrect shrink factor or an image has too few or too many dimensions
     """
+    if interpolation_mode not in valid_interpolations:
+        raise ValueError ("Specified interpolation '{}' is not in supported list of interpolations: {}".format(interpolation_mode, ', '.join(valid_interpolations)))
+
+    if shrink_factor <= 0:
+        raise ValueError ("Shrink factor must be a positive float")
+    if shrink_factor >= 1.0:
+        raise ValueError ("Shrink factor is not a float smaller than 1")
+
+    if len(img.shape) != 2 and len(img.shape) != 3:
+        raise ValueError ("Image is not two or three dimensional")
+
     new_height = round(img.shape[0] * shrink_factor)
     new_width = round(img.shape[1] * shrink_factor)
     
@@ -239,8 +256,17 @@ def enlarge_image(img, enlarge_factor, *, interpolation_mode=cv.INTER_LINEAR):
         3D number Numpy array, the enlarged image
     
     Raises:
-        TODO: error handling
+        ValueError: unknown interpolation mode, incorrect shrink factor or an image has too few or too many dimensions
     """
+    if interpolation_mode not in valid_interpolations:
+        raise ValueError ("Specified interpolation '{}' is not in supported list of interpolations: {}".format(interpolation_mode, ', '.join(valid_interpolations)))
+
+    if enlarge_factor < 1.0:
+        raise ValueError ("Shrink factor must be a positive float greater than or equal to 1")
+
+    if len(img.shape) != 2 and len(img.shape) != 3:
+        raise ValueError ("Image is not two or three dimensional")
+
     new_height = round(img.shape[0] * enlarge_factor)
     new_width = round(img.shape[1] * enlarge_factor)
     
@@ -259,8 +285,20 @@ def blur_image(img, intensity, *, shrink_interp_mode=cv.INTER_AREA, enlarge_inte
         3D number Numpy array, the blurred image
     
     Raises:
-        TODO: error handling
+        ValueError: unknown interpolation mode, incorrect shrink factor or an image has too few or too many dimensions
     """
+    if shrink_interp_mode not in valid_interpolations:
+        raise ValueError ("Specified interpolation '{}' is not in supported list of interpolations: {}".format(shrink_interp_mode, ', '.join(valid_interpolations)))
+
+    if enlarge_interp_mode not in valid_interpolations:
+        raise ValueError ("Specified interpolation '{}' is not in supported list of interpolations: {}".format(enlarge_interp_mode, ', '.join(valid_interpolations)))
+
+    if intensity < 1.0:
+        raise ValueError ("Intensity must be a positive float greater than or equal to 1")
+
+    if len(img.shape) != 2 and len(img.shape) != 3:
+        raise ValueError ("Image is not two or three dimensional")
+
     shrunk = shrink_image(img, (1 / intensity), interpolation_mode=shrink_interp_mode)
     return enlarge_image(shrunk, intensity, interpolation_mode=enlarge_interp_mode)
 
@@ -286,10 +324,14 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
         Information at the given location, coordinates
     
     Raises:
-        TODO: error handling for bad dimension sizes, negative stop size
+        ValueError: items is one dimensional
     """
+
     global points_cache
     np_items = np.array(items)
+
+    if len(np_items.shape) < 2:
+        raise ValueError ("Provided items array cannot be one dimensional")
 
     if stop == None:
         stop = sys.maxsize
@@ -340,10 +382,13 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
         Information at the given location, coordinates
     
     Raises:
-        TODO: error handling
+        ValueError: items is one dimensional
     """
     global points_cache
     np_items = np.array(items)
+
+    if len(np_items.shape) < 2:
+        raise ValueError ("Provided items array cannot be one dimensional")
 
     if stop == None:
         stop = sys.maxsize
@@ -391,10 +436,13 @@ def random_2d(items, stop=None):
         Information at the given location, coordinates
     
     Raises:
-        TODO: error handling
+        ValueError: items is one dimensional
     """
     global points_cache
     np_items = np.array(items)
+
+    if len(np_items.shape) < 2:
+        raise ValueError ("Provided items array cannot be one dimensional")
 
     if stop == None:
         stop = sys.maxsize
@@ -429,10 +477,13 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
         Information at the given location, coordinates
     
     Raises:
-        TODO: error handling
+        ValueError: items is one dimensional
     """
     global points_cache
     np_items = np.array(items)
+
+    if len(np_items.shape) < 2:
+        raise ValueError ("Provided items array cannot be one dimensional")
 
     if stop == None:
         stop = sys.maxsize
@@ -468,10 +519,13 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
         Information at the given location, coordinates
     
     Raises:
-        TODO: error handling
+        ValueError: items is one dimensional
     """
     global points_cache
     np_items = np.array(items)
+
+    if len(np_items.shape) < 2:
+        raise ValueError ("Provided items array cannot be one dimensional")
 
     if stop == None:
         stop = sys.maxsize
