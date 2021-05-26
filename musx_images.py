@@ -11,10 +11,13 @@ import sys
 # Library Global Variables #
 # ------------------------ #
 
+"List of valid color spaces, used for error handling."
 valid_color_spaces = ["BGR", "Gray", "HLS", "HLS_FULL", "HSV", "HSV_FULL", "Lab", "Luv", "RGB", "XYZ", "YCbCr", "YUV"]
 
+"List of valid interpolation methods, used for error handling."
 valid_interpolations = ["INTER_NEAREST", "INTER_LINEAR", "INTER_CUBIC", "INTER_AREA", "INTER_LINEAR_EXACT", "INTER_NEAREST_EXACT", "INTER_MAX"]
 
+"Global array used for caching accessed locations in the 2D generators"
 points_cache = []
 
 
@@ -137,7 +140,7 @@ def randomize_color_space(img, iterations=1, *, final_color_space=None):
     return converted_img
 
 
-def display_image(img, *, grayscale=False):
+def display_image(img):
     """Wrapper on matplotlib's imshow function.
 
     Arguments:
@@ -145,11 +148,14 @@ def display_image(img, *, grayscale=False):
         grayscale: boolean, flag for if image is grayscale or not, defaults to False
     
     Raises:
-        TODO: error handling (does this work grayscale?)
+        ValueError: image has too few or too many dimensions
     """
+    if len(img.shape) != 2 and len(img.shape) != 3:
+        raise ValueError ("Image is not two or three dimensional")
+
     fig, axes = plt.subplots(1, 1, figsize=(10, 10))
 
-    if grayscale:
+    if len(img.shape) == 2:
         axes.imshow(img, cmap='gray')
     else:
         axes.imshow(img)
@@ -292,7 +298,10 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
     col = start_col
 
     points_cache.append((row, col))
-    yield list(np_items[row, col]), (row, col) # Yield original item
+    try:
+        yield list(np_items[row, col]), (row, col)
+    except TypeError: # Error catching for grayscale, which is only 2D
+        yield list([np_items[row, col]]), (row, col)
 
     for _ in range(stop - 1):
         row += movement[0][0]
@@ -307,7 +316,11 @@ def traversal_2d(items, stop=None, *, start_row=0, start_col=0, movement=[(0, 1)
         col %= np_items.shape[1]
 
         points_cache.append((row, col))
-        yield list(np_items[row, col]), (row, col)
+        
+        try:
+            yield list(np_items[row, col]), (row, col)
+        except TypeError: # Error catching for grayscale, which is only 2D
+            yield list([np_items[row, col]]), (row, col)
 
 
 def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), movement_2d=True, mode="wrap"):
@@ -339,7 +352,10 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
     col = start_col
 
     points_cache.append((row, col))
-    yield list(np_items[row, col]), (row, col) # Yield original item
+    try:
+        yield list(np_items[row, col]), (row, col)
+    except TypeError: # Error catching for grayscale, which is only 2D
+        yield list([np_items[row, col]]), (row, col)
 
     row_deviation = musx.choose([x for x in range(-1 * width[0], width[0] + 1)])
     col_deviation = musx.choose([x for x in range(-1 * width[1], width[1] + 1)])
@@ -358,7 +374,10 @@ def drunk_2d(items, stop=None, *, start_row=0, start_col=0, width=(1, 1), moveme
         col = musx.fit(col, 0, items.shape[1] - 1, mode=mode)
 
         points_cache.append((row, col))
-        yield list(np_items[row, col]), (row, col)
+        try:
+            yield list(np_items[row, col]), (row, col)
+        except TypeError: # Error catching for grayscale, which is only 2D
+            yield list([np_items[row, col]]), (row, col)
 
 
 def random_2d(items, stop=None):
@@ -386,7 +405,11 @@ def random_2d(items, stop=None):
         col = round(musx.uniran() * (items.shape[1] - 1))
 
         points_cache.append((row, col))
-        yield list(np_items[row, col]), (row, col)
+
+        try:
+            yield list(np_items[row, col]), (row, col)
+        except TypeError: # Error catching for grayscale, which is only 2D
+            yield list([np_items[row, col]]), (row, col)
 
 
 def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_low=-4, row_dist_high=4, col_distribution=musx.gauss, col_dist_low=-4, col_dist_high=4):
@@ -423,7 +446,10 @@ def distribution_2d(items, stop=None, *, row_distribution=musx.gauss, row_dist_l
         col = round(musx.rescale(col_raw, col_dist_low, col_dist_high, 0, items.shape[1] - 1))
 
         points_cache.append((row, col))
-        yield list(np_items[row, col]), (row, col)
+        try:
+            yield list(np_items[row, col]), (row, col)
+        except TypeError: # Error catching for grayscale, which is only 2D
+            yield list([np_items[row, col]]), (row, col)
 
 
 def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_steps=10):
@@ -454,7 +480,10 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
     exact_col = start_col
 
     points_cache.append((exact_row, exact_col))
-    yield list(np_items[exact_row, exact_col]), (exact_row, exact_col) # Yield original item
+    try:
+        yield list(np_items[exact_row, exact_col]), (exact_row, exact_col)
+    except TypeError: # Error catching for grayscale, which is only 2D
+        yield list([np_items[exact_row, exact_col]]), (exact_row, exact_col)
 
     row_step = (end_row - start_row) / num_steps
     col_step = (end_col - start_col) / num_steps
@@ -467,7 +496,10 @@ def line_2d(items, stop=None, *, start_row, start_col, end_row, end_col, num_ste
         col = round(exact_col)
 
         points_cache.append((row, col))
-        yield list(np_items[row, col]), (row, col)
+        try:
+            yield list(np_items[row, col]), (row, col)
+        except TypeError: # Error catching for grayscale, which is only 2D
+            yield list([np_items[row, col]]), (row, col)
 
         if row == end_row and col == end_col:
             break
